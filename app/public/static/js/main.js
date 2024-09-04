@@ -1,14 +1,19 @@
  
 
+    const MIN_ZOOM = 14;
+    const MAX_ZOOM = 19;
+    const INITIAL_ZOOM = 15;
+
     var map = L.map('map', {
-        zoomControl: false,  // Disable default zoom control
-        attributionControl: false,
-        minZoom: 12,  // Set minimum zoom level
-        maxZoom: 18  // Set maximum zoom level
-    }).setView([0, 0], 13);  // Start at zoom level 13
+        zoomControl: false,
+        attributionControl: true,
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM
+    }).setView([0, 0], INITIAL_ZOOM);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        minZoom: 2,
+        maxZoom: MAX_ZOOM,
+        minZoom: MIN_ZOOM,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
@@ -17,13 +22,15 @@
     var addingReview = false;
     var clickedLatLng;
 
+    let currentFilter = 'all';
+
     function getUserLocation() {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(function(position) {
                 var lat = position.coords.latitude;
                 var lng = position.coords.longitude;
                 console.log("Geolocation successful:", lat, lng);
-                map.setView([lat, lng], 15);  // Increased zoom level from 13 to 15 for user's location
+                map.setView([lat, lng], 15);
                 fetchReviews();
             }, function(error) {
                 console.log("Error getting user location:", error);
@@ -40,7 +47,7 @@
     }
 
     function fallbackToDefaultLocation() {
-        map.setView([40.7128, -74.0060], 13); // New York City
+        map.setView([40.7128, -74.0060], 13);
         fetchReviews();
     }
 
@@ -48,7 +55,7 @@
         getUserLocation();
         map.on('click', onMapClick);
         map.on('moveend', onMapMoveEnd);
-        map.on('zoomend', onMapMoveEnd); // Added zoom event listener
+        map.on('zoomend', onMapMoveEnd);
         document.getElementById('zoom-in-btn').addEventListener('click', function() {
             map.zoomIn();
         });
@@ -59,10 +66,6 @@
             console.log('Add review button clicked');
             toggleAddReviewMode();
         });
-        document.getElementById('filter-btn').addEventListener('click', showFilterOptions);
-
-        // Remove this line as we'll no longer use a static template
-        // window.reviewMarkerTemplate = document.getElementById('review-marker-template').innerHTML;
 
         const form = document.getElementById('inline-form');
         if (form) {
@@ -70,6 +73,27 @@
         } else {
             console.error('Inline form not found in DOM');
         }
+
+        const filterDropdown = document.getElementById('filter-dropdown');
+        console.log('Attempting to find filter dropdown');
+        if (filterDropdown) {   
+            console.log('Filter dropdown found:', filterDropdown);
+            filterDropdown.addEventListener('change', function(e) {
+                console.log('Dropdown change event fired');
+                currentFilter = e.target.value;
+                console.log('Filter changed to:', currentFilter);
+                fetchReviews();
+            });
+            console.log('Change event listener added to filter dropdown');
+        } else {
+            console.error('Filter dropdown not found in DOM. Make sure the element with id "filter-dropdown" exists in your HTML.');
+        }
+
+        // Log the initial filter value
+        console.log('Initial filter value:', currentFilter);
+
+        // Manually trigger initial fetch
+        fetchReviews();
     });
 
     function toggleAddReviewMode() {
@@ -94,7 +118,7 @@
     function onMapClick(e) {
         console.log('Map clicked. Adding review:', addingReview);
         if (addingReview) {
-            e.originalEvent.stopPropagation(); // Stop event propagation
+            e.originalEvent.stopPropagation();
             clickedLatLng = e.latlng;
             console.log('Clicked location:', clickedLatLng);
             showInlineForm(clickedLatLng);
@@ -110,18 +134,16 @@
             console.error('Form container not found');
             return;
         }
-        formContainer.innerHTML = ''; // Clear previous content
+        formContainer.innerHTML = '';
         
-        // Create a loading placeholder
         const loadingPlaceholder = '<div class="text-center p-4">Loading form...</div>';
         
-        // Open the popup immediately with the loading placeholder
         const popup = L.popup({
             minWidth: 300,
             maxWidth: 300,
             keepInView: true,
             closeOnClick: false,
-            offset: [0, -2]  // Move the popup 20 pixels upwards
+            offset: [0, -2]
         })
         .setLatLng(latlng)
         .setContent(loadingPlaceholder)
@@ -129,7 +151,6 @@
 
         console.log('Popup opened with loading placeholder');
 
-        // Fetch the form content
         htmx.ajax('GET', '/components/inline_form', {
             target: '#form-container',
             swap: 'innerHTML',
@@ -139,7 +160,6 @@
         })
         .then(() => {
             return new Promise(resolve => {
-                // Wait a short time to ensure the content is loaded
                 setTimeout(() => {
                     const formContent = formContainer.innerHTML;
                     console.log('Form content received:', formContent);
@@ -151,11 +171,9 @@
             if (!formContent.trim()) {
                 throw new Error('Form content is empty');
             }
-            // Update the popup content
             popup.setContent(formContent);
             console.log('Inline form loaded and shown as popup');
             
-            // Disable adding review mode after showing the form
             addingReview = false;
             document.getElementById('add-review-btn').textContent = '+';
             document.getElementById('map').classList.remove('custom-cursor');
@@ -210,7 +228,7 @@
         .then(review => {
             addReviewMarker(review);
             closeInlineForm();
-            addingReview = false; // Set addingReview to false after submitting
+            addingReview = false;
             document.getElementById('add-review-btn').textContent = '+';
             hideLoadingIndicator();
         })
@@ -222,19 +240,22 @@
     }
 
     function addReviewMarker(review) {
-        const maxChars = 30; // Maximum characters to show
+        const maxChars = 30;
         const truncatedContent = review.content.length > maxChars 
             ? review.content.substring(0, maxChars) + '...' 
             : review.content;
 
+        const markerColor = review.rating === 5 ? 'bg-green-500' : 'bg-red-500';
+        const markerEmoji = review.rating === 5 ? '👍' : '🚫';
+
         var markerHtml = `
             <div class="flex items-center">
-                <div class="relative w-8 h-8 rounded-full shadow-md ${getMarkerColor(review.rating)}">
+                <div class="relative w-8 h-8 rounded-full shadow-md ${markerColor}">
                     <span class="absolute inset-0 flex items-center justify-center text-lg">
-                        ${getRatingEmoji(review.rating)}
+                        ${markerEmoji}
                     </span>
                 </div>
-                <div class="ml-2 px-2 py-1 bg-white rounded-lg shadow-md" style="border: 1px solid black; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div class="ml-2 px-2 py-1 bg-white rounded-lg shadow-md border border-gray-300 max-w-[150px] overflow-hidden text-overflow-ellipsis whitespace-nowrap">
                     <span class="text-sm">${sanitizeInput(truncatedContent)}</span>
                 </div>
             </div>
@@ -243,8 +264,8 @@
         var markerIcon = L.divIcon({
             className: 'custom-div-icon',
             html: markerHtml,
-            iconSize: [200, 40],  // Increased width to accommodate the text
-            iconAnchor: [16, 20]  // Adjusted to center the icon
+            iconSize: [200, 40],
+            iconAnchor: [16, 20]
         });
 
         var marker = L.marker([review.lat, review.lng], {icon: markerIcon})
@@ -253,10 +274,6 @@
             });
 
         markers.addLayer(marker);
-    }
-
-    function getMarkerColor(rating) {
-        return rating === 5 ? 'bg-green-500' : 'bg-red-500';
     }
 
     function getRatingEmoji(rating) {
@@ -268,18 +285,27 @@
     }
 
     function showFilterOptions() {
-        // Implement filter options UI here
         console.log("Show filter options");
     }
 
     function fetchReviews() {
+        showLoadingIndicator();  // Show loading indicator when starting to fetch
         var bounds = map.getBounds();
         var center = bounds.getCenter();
-        var radius = center.distanceTo(bounds.getNorthEast()) / 1000; // Convert to km
+        var radius = center.distanceTo(bounds.getNorthEast()) / 1000;
         
-        console.log(`Fetching reviews for lat: ${center.lat}, lng: ${center.lng}, radius: ${radius}`);
+        console.log(`Fetching reviews for lat: ${center.lat}, lng: ${center.lng}, radius: ${radius}, filter: ${currentFilter}`);
         
-        fetch(`/api/reviews?lat=${center.lat}&lng=${center.lng}&radius=${radius}`)
+        let url = `/api/reviews?lat=${center.lat}&lng=${center.lng}&radius=${radius}`;
+        
+        if (currentFilter && currentFilter !== 'all') {
+            const ratingValue = currentFilter === 'recommend' ? 5 : 1;
+            url += `&rating=${ratingValue}`;
+        }
+        
+        console.log('Fetching from URL:', url);
+
+        fetch(url)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -288,9 +314,9 @@
             })
             .then(reviews => {
                 console.log('Received reviews:', reviews);
-                markers.clearLayers(); // Clear existing markers
+                markers.clearLayers();
                 reviews.forEach(addReviewMarker);
-                console.log('Added markers for reviews:', reviews.length);
+                console.log('Added markers for filtered reviews');
                 hideLoadingIndicator();
             })
             .catch(error => {
@@ -318,7 +344,7 @@
                 })
                     .setLatLng([review.lat, review.lng])
                     .setContent(`
-                        <div class="review-popup p-4">
+                        <div class="p-4">
                             <h3 class="text-xl font-bold mb-2">${getRatingEmoji(review.rating)} Review</h3>
                             <p class="mb-4">${sanitizeInput(review.content)}</p>
                             <small class="text-gray-500">Posted on: ${new Date(review.created).toLocaleString()}</small>

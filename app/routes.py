@@ -18,6 +18,7 @@ def get_reviews():
         lat = float(request.args.get('lat'))
         lng = float(request.args.get('lng'))
         radius = float(request.args.get('radius', 10))  # Default to 10km if not provided
+        rating = request.args.get('rating')  # New parameter for rating filter
         
         # Haversine formula to calculate bounding box
         lat_rad = radians(lat)
@@ -31,8 +32,14 @@ def get_reviews():
         min_lng = lng - degrees(lng_delta)
         max_lng = lng + degrees(lng_delta)
         
+        filter_query = f'lat >= {min_lat} && lat <= {max_lat} && lng >= {min_lng} && lng <= {max_lng}'
+        
+        # Add rating filter if provided
+        if rating:
+            filter_query += f' && rating = {rating}'
+        
         reviews = client.collection('reviews').get_list(1, 50, {
-            'filter': f'lat >= {min_lat} && lat <= {max_lat} && lng >= {min_lng} && lng <= {max_lng}'
+            'filter': filter_query
         })
 
         reviews_list = [{
