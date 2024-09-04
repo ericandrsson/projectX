@@ -46,3 +46,7 @@ docker-compose up -d
 print_color $GREEN "Build process completed!"
 print_color $YELLOW "PocketBase is available at: http://localhost:8090"
 print_color $YELLOW "Flask app is available at: http://localhost:5001"
+
+# Watch logs
+print_color $GREEN "Watching logs..."
+docker-compose logs -f

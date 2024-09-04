@@ -28,7 +28,7 @@ body, html {
 }
 
 #add-review-btn {
-    bottom: 20px;
+    top: 20px;
     right: 20px;
 }
 
@@ -67,4 +67,32 @@ body, html {
     padding: 10px 20px;
     border-radius: 5px;
     z-index: 1000;
+}
+
+.custom-div-icon {
+    background: none;
+    border: none;
+}
+
+.leaflet-div-icon {
+    background: transparent;
+    border: none;
+}
+
+.leaflet-popup-content {
+    margin: 0;
+    padding: 13px;
+    width: 300px !important;
+}
+
+.leaflet-popup-content-wrapper {
+    padding: 0;
+}
+
+.leaflet-container {
+    font-family: Arial, sans-serif;
+}
+
+.leaflet-popup-tip-container {
+    margin-top: -1px;  /* Adjust this value as needed */
 }

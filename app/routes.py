@@ -54,15 +54,16 @@ def get_reviews():
 
 @main.route('/api/review', methods=['POST'])
 def add_review():
-    try:
-        data = request.form
+    try:    
+        data = request.json
+        print(data)
         review_data = {
             "content": data.get('content'),
             "rating": int(data.get('rating')),
             "lat": float(data.get('lat')),
             "lng": float(data.get('lng')),
-            "user": "GUEST_USER_ID",  # Replace with actual user ID if available
-            "place": "PLACEHOLDER_PLACE_ID"  # Replace with actual place ID if available
+            "user": None,
+            "place": None
         }
         
         review = client.collection('reviews').create(review_data)
@@ -103,3 +104,16 @@ def get_review(review_id):
     except Exception as e:
         print(f"Error in get_review: {str(e)}")
         return jsonify({"error": str(e)}), 400
+
+@main.route('/components/inline_form', methods=['GET'])
+def inline_form():
+    # In the future, you can fetch options from the database here
+    options = [
+        {"value": "5", "label": "👍 Recommend"},
+        {"value": "1", "label": "🚫 Avoid"}
+    ]
+    return render_template('components/inline_form.html', options=options)
+
+@main.route('/components/close_form', methods=['GET'])
+def close_form():
+    return '', 204  # Return an empty response with a 204 No Content status

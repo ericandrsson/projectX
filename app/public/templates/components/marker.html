@@ -1,0 +1,7 @@
+{% macro review_marker(review) %}
+<div class="relative w-8 h-8 rounded-full shadow-md {{ 'bg-green-500' if review.rating == 5 else 'bg-red-500' }}">
+  <span class="absolute inset-0 flex items-center justify-center text-lg">
+    {{ '👍' if review.rating == 5 else '👎' }}
+  </span>
+</div>
+{% endmacro %}

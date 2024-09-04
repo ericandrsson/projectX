@@ -15,21 +15,7 @@ services:
       timeout: 5s
       retries: 5
 
-  flask_app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: flask_app
-    restart: unless-stopped
-    ports:
-      - "5001:5001"
-    volumes:
-      - ./app:/app
-    environment:
-      - FLASK_ENV=development
-      - FLASK_APP=run.py
-    depends_on:
-      - pocketbase
+
 
 volumes:
   pb_data:

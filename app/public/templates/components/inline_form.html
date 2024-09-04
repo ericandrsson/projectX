@@ -1,0 +1,13 @@
+<div id="inline-form-content" class="w-full">
+    <h3 class="text-lg font-bold mb-2">Add Your Review</h3>
+    <textarea id="review-content" class="w-full p-2 mb-2 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Spill the tea..." required></textarea>
+    <select id="review-rating" class="w-full p-2 mb-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        {% for option in options %}
+            <option value="{{ option.value }}">{{ option.label }}</option>
+        {% endfor %}
+    </select>
+    <div class="flex justify-end space-x-2">
+        <button onclick="submitReview()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Drop Truth</button>
+        <button onclick="closeInlineForm()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">Cancel</button>
+    </div>
+</div>
