@@ -112,6 +112,15 @@ def get_review(review_id):
         print(f"Error in get_review: {str(e)}")
         return jsonify({"error": str(e)}), 400
 
+@main.route('/api/review/<review_id>', methods=['DELETE'])
+def delete_review(review_id):
+    try:
+        client.collection('reviews').delete(review_id)
+        return jsonify({"message": "Review deleted successfully"}), 200
+    except Exception as e:
+        print(f"Error in delete_review: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+
 @main.route('/components/inline_form', methods=['GET'])
 def inline_form():
     # In the future, you can fetch options from the database here

@@ -1,8 +1,9 @@
- 
-
     const MIN_ZOOM = 14;
     const MAX_ZOOM = 19;
     const INITIAL_ZOOM = 15;
+    const LOADING_TIMEOUT = 300;
+
+    let loadingTimeoutId;
 
     var map = L.map('map', {
         zoomControl: false,
@@ -94,6 +95,15 @@
 
         // Manually trigger initial fetch
         fetchReviews();
+
+        // Add this new event listener
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.closest('.delete-review-btn')) {
+                console.log('Delete button clicked');
+                var reviewId = e.target.closest('.delete-review-btn').getAttribute('data-review-id');
+                deleteReview(reviewId);
+            }
+        });
     });
 
     function toggleAddReviewMode() {
@@ -289,7 +299,7 @@
     }
 
     function fetchReviews() {
-        showLoadingIndicator();  // Show loading indicator when starting to fetch
+        showLoadingIndicator();
         var bounds = map.getBounds();
         var center = bounds.getCenter();
         var radius = center.distanceTo(bounds.getNorthEast()) / 1000;
@@ -327,10 +337,24 @@
     }
 
     function showLoadingIndicator() {
-        document.getElementById('loading-indicator').classList.remove('hidden');
+        // Clear any existing timeout
+        if (loadingTimeoutId) {
+            clearTimeout(loadingTimeoutId);
+        }
+        
+        // Set a new timeout
+        loadingTimeoutId = setTimeout(() => {
+            document.getElementById('loading-indicator').classList.remove('hidden');
+        }, LOADING_TIMEOUT); // Use the constant for the timeout duration
     }
 
     function hideLoadingIndicator() {
+        // Clear the timeout if it hasn't fired yet
+        if (loadingTimeoutId) {
+            clearTimeout(loadingTimeoutId);
+        }
+        
+        // Hide the loading indicator
         document.getElementById('loading-indicator').classList.add('hidden');
     }
 
@@ -339,18 +363,29 @@
         fetch(`/api/review/${reviewId}`)
             .then(response => response.json())
             .then(review => {
+                var popupContent = `
+                    <div class="p-4 relative">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xl font-bold">${getRatingEmoji(review.rating)} Review</h3>
+                            <button class="delete-review-btn text-gray-500 hover:text-red-500 focus:outline-none" data-review-id="${reviewId}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="mb-4">${sanitizeInput(review.content)}</p>
+                        <small class="text-gray-500">Posted on: ${new Date(review.created).toLocaleString()}</small>
+                    </div>
+                `;
+
                 var popup = L.popup({
-                    className: 'review-popup-container'
+                    className: 'review-popup-container',
+                    maxWidth: 300
                 })
                     .setLatLng([review.lat, review.lng])
-                    .setContent(`
-                        <div class="p-4">
-                            <h3 class="text-xl font-bold mb-2">${getRatingEmoji(review.rating)} Review</h3>
-                            <p class="mb-4">${sanitizeInput(review.content)}</p>
-                            <small class="text-gray-500">Posted on: ${new Date(review.created).toLocaleString()}</small>
-                        </div>
-                    `)
+                    .setContent(popupContent)
                     .openOn(map);
+
                 hideLoadingIndicator();
             })
             .catch(error => {
@@ -358,6 +393,36 @@
                 hideLoadingIndicator();
                 alert('Failed to load review details. Please try again.');
             });
+    }
+
+    function deleteReview(reviewId) {
+        console.log('Delete review function called with ID:', reviewId);
+        if (confirm('Are you sure you want to delete this review?')) {
+            console.log('Deletion confirmed');
+            showLoadingIndicator();
+            fetch(`/api/review/${reviewId}`, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Review deleted:', data);
+                map.closePopup();
+                fetchReviews(); // Refresh the reviews on the map
+                hideLoadingIndicator();
+            })
+            .catch(error => {
+                console.error('Error deleting review:', error);
+                hideLoadingIndicator();
+                alert('Failed to delete review. Please try again.');
+            });
+        } else {
+            console.log('Deletion cancelled');
+        }
     }
 
     function onMapMoveEnd() {
