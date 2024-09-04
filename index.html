@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Map</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <div id="map-container">
+        <div id="map" class="map-canvas"></div>
+        <div class="brush"></div>
+        <div class="controls">
+            <div class="zoom-buttons">
+                <div class="zoom-in">+</div>
+                <div class="zoom-out">-</div>
+            </div>
+            <div class="mode-buttons">
+                <div class="action-drag-mode">🖐️</div>
+                <div class="action-draw-mode">✏️</div>
+                <div class="action-tag-mode">🏷️</div>
+            </div>
+            <div class="action-enable-gps">📍</div>
+            <div class="color-picker">
+                <div data-color="#ff0000"></div>
+                <div data-color="#00ff00"></div>
+                <div data-color="#0000ff"></div>
+                <div data-color="#ffff00"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
