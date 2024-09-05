@@ -1,22 +1,43 @@
-version: '3.8'
+    services:
+      pocketbase:
+        image: ghcr.io/muchobien/pocketbase:latest
+        container_name: pocketbase
+        restart: unless-stopped
+        ports:
+          - "8090:8090"
+        volumes:
+          - ./pb_data:/pb_data
+        command: ["--http=0.0.0.0:8090", "--origins=http://localhost:5001,http://frontend"]
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:8090/api/health || exit 1
+          interval: 5s
+          timeout: 5s
+          retries: 5
+        networks:
+          - nginx_default
 
-services:
-  pocketbase:
-    image: ghcr.io/muchobien/pocketbase:latest
-    container_name: pocketbase
-    restart: unless-stopped
-    ports:
-      - "8090:8090"
+      frontend:
+        container_name: frontend
+        image: dbu14txo9wibuf:latest
+        restart: unless-stopped
+        environment:
+          - POCKETBASE_URL=http://pocketbase:8090
+        entrypoint:
+          - gunicorn
+          - -b
+          - 0.0.0.0:80
+          - app:create_app()
+        depends_on:
+          - pocketbase
+        networks:
+          - nginx_default
+        ports:
+          - "80:80"
+
     volumes:
-      - ./pb_data:/pb_data
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8090/api/health || exit 1
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      pb_data:
+        driver: local
 
-
-
-volumes:
-  pb_data:
-    driver: local
+    networks:
+      nginx_default:
+        driver: bridge

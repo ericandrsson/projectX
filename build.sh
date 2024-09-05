@@ -31,7 +31,7 @@ poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 # Build Docker image
 print_color $GREEN "Building Docker image..."
-docker build -t flask-app .
+docker build -t dbu14txo9wibuf .
 
 # Check if containers are already running
 if docker-compose ps | grep -q "Up"; then

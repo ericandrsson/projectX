@@ -1,4 +1,4 @@
-    const MIN_ZOOM = 14;
+    const MIN_ZOOM = 10;  // Reduced from 14 to allow more zooming out
     const MAX_ZOOM = 19;
     const INITIAL_ZOOM = 15;
     const LOADING_TIMEOUT = 300;
@@ -174,7 +174,7 @@
                     const formContent = formContainer.innerHTML;
                     console.log('Form content received:', formContent);
                     resolve(formContent);
-                }, 100);
+                }, 500);
             });
         })
         .then(formContent => {
