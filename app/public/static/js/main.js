@@ -289,15 +289,11 @@
             console.log('Inline form loaded and shown as popup');
             
             addingReview = false;
-            document.getElementById('add-review-btn').textContent = '+';
-            document.getElementById('map').classList.remove('custom-cursor');
         })
         .catch(error => {
             console.error('Error loading inline form:', error);
             popup.setContent('Failed to load the review form. Please try again.');
             addingReview = false;
-            document.getElementById('add-review-btn').textContent = '+';
-            document.getElementById('map').classList.remove('custom-cursor');
         });
     }
 
