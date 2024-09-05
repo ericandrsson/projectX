@@ -289,14 +289,22 @@
             console.log('Inline form loaded and shown as popup');
             
             addingReview = false;
-            toggleMapMode(true); // Switch back to moving map mode
+            document.getElementById('add-review-btn').textContent = '+';
+            document.getElementById('map').classList.remove('custom-cursor');
         })
         .catch(error => {
             console.error('Error loading inline form:', error);
             popup.setContent('Failed to load the review form. Please try again.');
             addingReview = false;
-            toggleMapMode(true); // Switch back to moving map mode
+            document.getElementById('add-review-btn').textContent = '+';
+            document.getElementById('map').classList.remove('custom-cursor');
         });
+    }
+
+    function closeInlineForm() {
+        console.log('closeInlineForm called');
+        map.closePopup();
+        toggleMapMode(true); // Switch back to moving map mode
     }
 
     function submitReview() {

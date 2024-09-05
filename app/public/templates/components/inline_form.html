@@ -1,19 +1,13 @@
-<div id="inline-form-content" class="w-full bg-white p-6 rounded-lg shadow-lg">
-    <h3 class="text-xl font-semibold mb-4 text-gray-800">Share Your Experience</h3>
-    <div class="mb-4">
-        <label for="review-content" class="block text-sm font-medium text-gray-700 mb-1">Your Review</label>
-        <textarea id="review-content" class="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="4" placeholder="Tell us about your experience..." required></textarea>
+<div id="inline-form-content" class="w-full">
+    <h3 class="text-lg font-bold mb-2">Add Your Review</h3>
+    <textarea id="review-content" class="w-full p-2 mb-2 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Spill the tea..." required></textarea>
+    <select id="review-rating" class="w-full p-2 mb-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        {% for option in options %}
+            <option value="{{ option.value }}">{{ option.label }}</option>
+        {% endfor %}
+    </select>
+    <div class="flex justify-end space-x-2">
+        <button onclick="submitReview()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Drop Truth</button>
+        <button onclick="closeInlineForm()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">Cancel</button>
     </div>
-    <div class="mb-6">
-        <label for="review-rating" class="block text-sm font-medium text-gray-700 mb-1">Rating</label>
-        <select id="review-rating" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            {% for option in options %}
-                <option value="{{ option.value }}">{{ option.label }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="flex justify-end space-x-3">
-        <button onclick="closeInlineForm()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-150 ease-in-out">Cancel</button>
-        <button onclick="submitReview()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out">Submit Review</button>
-    </div>
-</div>
+</div>  
