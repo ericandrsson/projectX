@@ -24,6 +24,23 @@
     var clickedLatLng;
 
     let currentFilter = 'all';
+    let isInitialLoad = true;
+
+    // Add these functions at the beginning of the file
+    function showErrorToaster(message) {
+        const toaster = document.getElementById('error-toaster');
+        const messageElement = document.getElementById('error-message');
+        messageElement.textContent = message;
+        toaster.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+            hideErrorToaster();
+        }, 5000); // Hide after 5 seconds
+    }
+
+    function hideErrorToaster() {
+        const toaster = document.getElementById('error-toaster');
+        toaster.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+    }
 
     function getUserLocation() {
         if ("geolocation" in navigator) {
@@ -31,8 +48,10 @@
                 var lat = position.coords.latitude;
                 var lng = position.coords.longitude;
                 console.log("Geolocation successful:", lat, lng);
-                map.setView([lat, lng], 15);
-                fetchReviews();
+                map.setView([lat, lng], 15, {
+                    animate: false,
+                    noMoveStart: true
+                });
             }, function(error) {
                 console.log("Error getting user location:", error);
                 fallbackToDefaultLocation();
@@ -48,32 +67,72 @@
     }
 
     function fallbackToDefaultLocation() {
-        map.setView([40.7128, -74.0060], 13);
-        fetchReviews();
+        map.setView([40.7128, -74.0060], 13, {
+            animate: false,
+            noMoveStart: true
+        });
     }
 
+    // Add this debounce function at the beginning of the file
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Modify the fetchReviews function to be debounced
+    const debouncedFetchReviews = debounce(function() {
+        showLoadingIndicator();
+        var bounds = map.getBounds();
+        var center = bounds.getCenter();
+        var radius = center.distanceTo(bounds.getNorthEast()) / 1000;
+        
+        console.log(`Fetching reviews for lat: ${center.lat}, lng: ${center.lng}, radius: ${radius}, filter: ${currentFilter}`);
+        
+        let url = `/api/reviews?lat=${center.lat}&lng=${center.lng}&radius=${radius}`;
+        
+        if (currentFilter && currentFilter !== 'all') {
+            const ratingValue = currentFilter === 'recommend' ? 5 : 1;
+            url += `&rating=${ratingValue}`;
+        }
+        
+        console.log('Fetching from URL:', url);
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(reviews => {
+                console.log('Received reviews:', reviews);
+                markers.clearLayers();
+                reviews.forEach(addReviewMarker);
+                console.log('Added markers for filtered reviews');
+                hideLoadingIndicator();
+            })
+            .catch(error => {
+                console.error('Error fetching reviews:', error);
+                hideLoadingIndicator();
+                showErrorToaster(error.error || 'Failed to load reviews. Please try again later.');
+            });
+    }, 1000); // 1000ms debounce time
+
     document.addEventListener('DOMContentLoaded', function() {
-        getUserLocation();
-        map.on('click', onMapClick);
-        map.on('moveend', onMapMoveEnd);
-        map.on('zoomend', onMapMoveEnd);
+
         document.getElementById('zoom-in-btn').addEventListener('click', function() {
             map.zoomIn();
         });
         document.getElementById('zoom-out-btn').addEventListener('click', function() {
             map.zoomOut();
         });
-        document.getElementById('add-review-btn').addEventListener('click', function() {
-            console.log('Add review button clicked');
-            toggleAddReviewMode();
-        });
-
-        const form = document.getElementById('inline-form');
-        if (form) {
-            console.log('Inline form found in DOM');
-        } else {
-            console.error('Inline form not found in DOM');
-        }
 
         const filterDropdown = document.getElementById('filter-dropdown');
         console.log('Attempting to find filter dropdown');
@@ -83,7 +142,7 @@
                 console.log('Dropdown change event fired');
                 currentFilter = e.target.value;
                 console.log('Filter changed to:', currentFilter);
-                fetchReviews();
+                debouncedFetchReviews();
             });
             console.log('Change event listener added to filter dropdown');
         } else {
@@ -92,9 +151,25 @@
 
         // Log the initial filter value
         console.log('Initial filter value:', currentFilter);
+        // Use 'whenReady' instead of 'load' for Leaflet maps
+        map.whenReady(function() {
+            console.log('Map is ready');
+            getUserLocation();
+            
+            // Use a combination of setTimeout and requestAnimationFrame for better reliability
+            setTimeout(() => {
+                requestAnimationFrame(() => {
+                    console.log('Map fully rendered, fetching reviews');
+                    debouncedFetchReviews();
+                    isInitialLoad = false;
+                });
+            }, 1000);
 
-        // Manually trigger initial fetch
-        fetchReviews();
+            map.on('click', onMapClick);
+            map.on('moveend', onMapMoveEnd);
+            map.on('zoomend', onMapMoveEnd);
+        });
+
 
         // Add this new event listener
         document.addEventListener('click', function(e) {
@@ -106,34 +181,63 @@
         });
     });
 
-    function toggleAddReviewMode() {
-        addingReview = !addingReview;
-        document.getElementById('map').classList.toggle('custom-cursor', addingReview);
-        document.getElementById('add-review-btn').textContent = addingReview ? '×' : '+';
-        console.log('Add review mode toggled:', addingReview);
+    let isMovingMap = true; // Default mode is moving the map
 
-        if (!addingReview) {
-            closeInlineForm();
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (keep existing event listeners)
+
+        document.getElementById('move-map-btn').addEventListener('click', function() {
+            toggleMapMode(true);
+        });
+
+        document.getElementById('add-review-btn').addEventListener('click', function() {
+            toggleMapMode(false);
+        });
+
+        // ... (keep the rest of the existing code)
+    });
+
+    function toggleMapMode(moving) {
+        isMovingMap = moving;
+        addingReview = !moving;
+        
+        const moveBtn = document.getElementById('move-map-btn');
+        const addBtn = document.getElementById('add-review-btn');
+        const mapElement = document.getElementById('map');
+        
+        // Reset both buttons to default state
+        moveBtn.classList.remove('bg-blue-500', 'text-white', 'hover:bg-blue-600');
+        addBtn.classList.remove('bg-blue-500', 'text-white', 'hover:bg-blue-600');
+        moveBtn.classList.add('bg-white', 'text-gray-700', 'hover:bg-gray-200');
+        addBtn.classList.add('bg-white', 'text-gray-700', 'hover:bg-gray-200');
+        
+        // Apply active state to the selected button
+        if (moving) {
+            moveBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-gray-200');
+            moveBtn.classList.add('bg-blue-500', 'text-white', 'hover:bg-blue-600');
+        } else {
+            addBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-gray-200');
+            addBtn.classList.add('bg-blue-500', 'text-white', 'hover:bg-blue-600');
+        }
+        
+        if (moving) {
+            map.dragging.enable();
+            mapElement.classList.remove('cursor-tag');
+            mapElement.classList.add('cursor-hand');
+        } else {
+            map.dragging.disable();
+            mapElement.classList.remove('cursor-hand');
+            mapElement.classList.add('cursor-tag');
         }
     }
 
-    function closeInlineForm() {
-        map.closePopup();
-        addingReview = false;
-        document.getElementById('map').classList.remove('custom-cursor');
-        document.getElementById('add-review-btn').textContent = '+';
-        console.log('Inline form closed');
-    }
-
     function onMapClick(e) {
-        console.log('Map clicked. Adding review:', addingReview);
-        if (addingReview) {
+        if (!isMovingMap) {
+            console.log('Map clicked for adding review');
             e.originalEvent.stopPropagation();
             clickedLatLng = e.latlng;
             console.log('Clicked location:', clickedLatLng);
             showInlineForm(clickedLatLng);
-        } else if (!map.hasLayer(L.popup())) {
-            closeInlineForm();
         }
     }
 
@@ -185,15 +289,13 @@
             console.log('Inline form loaded and shown as popup');
             
             addingReview = false;
-            document.getElementById('add-review-btn').textContent = '+';
-            document.getElementById('map').classList.remove('custom-cursor');
+            toggleMapMode(true); // Switch back to moving map mode
         })
         .catch(error => {
             console.error('Error loading inline form:', error);
             popup.setContent('Failed to load the review form. Please try again.');
             addingReview = false;
-            document.getElementById('add-review-btn').textContent = '+';
-            document.getElementById('map').classList.remove('custom-cursor');
+            toggleMapMode(true); // Switch back to moving map mode
         });
     }
 
@@ -202,12 +304,12 @@
         const rating = document.getElementById('review-rating').value;
         
         if (!content.trim()) {
-            alert('Please enter a review content.');
+            showErrorToaster('Please enter a review content.');
             return;
         }
         
         if (!clickedLatLng || !clickedLatLng.lat || !clickedLatLng.lng) {
-            alert('Invalid location. Please try clicking on the map again.');
+            showErrorToaster('Invalid location. Please try clicking on the map again.');
             return;
         }
         
@@ -238,14 +340,12 @@
         .then(review => {
             addReviewMarker(review);
             closeInlineForm();
-            addingReview = false;
-            document.getElementById('add-review-btn').textContent = '+';
             hideLoadingIndicator();
         })
         .catch(error => {
             console.error('Error submitting review:', error);
             hideLoadingIndicator();
-            alert('Failed to submit review. Please try again.');
+            showErrorToaster('Failed to submit review. Please try again.');
         });
     }
 
@@ -296,44 +396,6 @@
 
     function showFilterOptions() {
         console.log("Show filter options");
-    }
-
-    function fetchReviews() {
-        showLoadingIndicator();
-        var bounds = map.getBounds();
-        var center = bounds.getCenter();
-        var radius = center.distanceTo(bounds.getNorthEast()) / 1000;
-        
-        console.log(`Fetching reviews for lat: ${center.lat}, lng: ${center.lng}, radius: ${radius}, filter: ${currentFilter}`);
-        
-        let url = `/api/reviews?lat=${center.lat}&lng=${center.lng}&radius=${radius}`;
-        
-        if (currentFilter && currentFilter !== 'all') {
-            const ratingValue = currentFilter === 'recommend' ? 5 : 1;
-            url += `&rating=${ratingValue}`;
-        }
-        
-        console.log('Fetching from URL:', url);
-
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(reviews => {
-                console.log('Received reviews:', reviews);
-                markers.clearLayers();
-                reviews.forEach(addReviewMarker);
-                console.log('Added markers for filtered reviews');
-                hideLoadingIndicator();
-            })
-            .catch(error => {
-                console.error('Error fetching reviews:', error);
-                hideLoadingIndicator();
-                alert('Failed to load reviews. Please try again later.');
-            });
     }
 
     function showLoadingIndicator() {
@@ -391,7 +453,7 @@
             .catch(error => {
                 console.error('Error fetching full review:', error);
                 hideLoadingIndicator();
-                alert('Failed to load review details. Please try again.');
+                showErrorToaster('Failed to load review details. Please try again.');
             });
     }
 
@@ -412,20 +474,26 @@
             .then(data => {
                 console.log('Review deleted:', data);
                 map.closePopup();
-                fetchReviews(); // Refresh the reviews on the map
+                debouncedFetchReviews(); // Use debounced version here
                 hideLoadingIndicator();
             })
             .catch(error => {
                 console.error('Error deleting review:', error);
                 hideLoadingIndicator();
-                alert('Failed to delete review. Please try again.');
+                showErrorToaster('Failed to delete review. Please try again.');
             });
         } else {
             console.log('Deletion cancelled');
         }
     }
 
+    // Update the onMapMoveEnd function to use the debounced version
     function onMapMoveEnd() {
         console.log('Map moved or zoomed. Current zoom:', map.getZoom());
-        fetchReviews();
+        if (!isInitialLoad) {
+            debouncedFetchReviews();
+        }
     }
+
+    // Initialize the map mode
+    toggleMapMode(true);

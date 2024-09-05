@@ -5,6 +5,7 @@ git add .
 
 # Commit with a dummy message
 git commit -m "Automated deployment commit"
+git push
 
 # Build the Docker container
 docker build -t dbu14txo9wibuf:latest .

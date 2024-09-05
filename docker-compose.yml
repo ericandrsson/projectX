@@ -13,31 +13,6 @@
           interval: 5s
           timeout: 5s
           retries: 5
-        networks:
-          - nginx_default
-
-      frontend:
-        container_name: frontend
-        image: dbu14txo9wibuf:latest
-        restart: unless-stopped
-        environment:
-          - POCKETBASE_URL=http://pocketbase:8090
-        entrypoint:
-          - gunicorn
-          - -b
-          - 0.0.0.0:80
-          - app:create_app()
-        depends_on:
-          - pocketbase
-        networks:
-          - nginx_default
-        ports:
-          - "80:80"
-
     volumes:
       pb_data:
         driver: local
-
-    networks:
-      nginx_default:
-        driver: bridge

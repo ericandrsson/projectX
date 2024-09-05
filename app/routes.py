@@ -1,16 +1,10 @@
 from flask import Blueprint, render_template, jsonify, request
-from flask import current_app as app
+from .pocketbase_client import get_pb_client
 from math import radians, degrees, cos, sin, asin, sqrt
 from pocketbase import PocketBase
 
 main = Blueprint('main', __name__)
 
-def get_client():
-    client = PocketBase(app.config['POCKETBASE_URL'])
-    client.collection("users").auth_with_password(
-    "users15752", "12345678")
-
-    return client
 
 @main.route('/')
 def index():    
@@ -42,7 +36,7 @@ def get_reviews():
         if rating:
             filter_query += f' && rating = {rating}'
         
-        reviews = get_client().collection('reviews').get_list(1, 50, {
+        reviews = get_pb_client().collection('reviews').get_list(1, 50, {
             'filter': filter_query
         })
 
@@ -77,7 +71,7 @@ def add_review():
             "place": None
         }
         
-        review = get_client().collection('reviews').create(review_data)
+        review = get_pb_client().collection('reviews').create(review_data)
         
         return jsonify({
             "id": review.id,
@@ -97,7 +91,7 @@ def add_review():
 @main.route('/api/review/<review_id>', methods=['GET'])
 def get_review(review_id):
     try:
-        review = get_client().collection('reviews').get_one(review_id)
+        review = get_pb_client().collection('reviews').get_one(review_id)
         if review:
             return jsonify({
                 "id": review.id,
@@ -119,7 +113,7 @@ def get_review(review_id):
 @main.route('/api/review/<review_id>', methods=['DELETE'])
 def delete_review(review_id):
     try:
-        get_client().collection('reviews').delete(review_id)
+        get_pb_client().collection('reviews').delete(review_id)
         return jsonify({"message": "Review deleted successfully"}), 200
     except Exception as e:
         print(f"Error in delete_review: {str(e)}")

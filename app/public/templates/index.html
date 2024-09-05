@@ -7,6 +7,9 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
 </head>
 <body class="bg-gray-100 m-0 p-0 font-sans h-full overflow-hidden">
     <div id="map" class="h-screen w-full"></div>
@@ -20,7 +23,11 @@
         </select>
     </div>
 
-    <button id="add-review-btn" class="fixed top-4 right-4 bg-white text-gray-700 border-2 border-gray-300 rounded-full w-16 h-16 flex items-center justify-center text-3xl shadow-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 z-[1000]">+</button>
+    <!-- Update the buttons -->
+    <div class="fixed top-4 right-4 z-[1000] flex flex-col space-y-2">
+        <button id="move-map-btn" class="bg-blue-500 text-white border-2 border-gray-300 rounded-full w-16 h-16 flex items-center justify-center text-3xl shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">✋</button>
+        <button id="add-review-btn" class="bg-white text-gray-700 border-2 border-gray-300 rounded-full w-16 h-16 flex items-center justify-center text-3xl shadow-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">🏷️</button>
+    </div>
     <div id="form-container"></div>
     <div id="loading-indicator" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 text-white p-4 rounded-lg z-[1000]">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -30,30 +37,17 @@
         <button id="zoom-in-btn" class="bg-white text-gray-700 border-2 border-gray-300 rounded-t-md w-10 h-10 flex items-center justify-center text-2xl shadow-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 mb-1">+</button>
         <button id="zoom-out-btn" class="bg-white text-gray-700 border-2 border-gray-300 rounded-b-md w-10 h-10 flex items-center justify-center text-2xl shadow-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">-</button>
     </div>
-
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <style>
-        .leaflet-div-icon {
-            background: transparent;
-            border: none;
-        }
-        .leaflet-popup-content-wrapper {
-            padding: 0;
-        }
-        .leaflet-popup-content {
-            margin: 0;
-            width: 300px !important;
-        }
-        .leaflet-container {
-            font-family: Arial, sans-serif;
-        }
-        .leaflet-popup-tip-container {
-            margin-top: -1px;
-        }
-        .custom-cursor {
-            cursor: crosshair;
-        }
-    </style>
+    
+    <!-- Update this toaster div at the end of the body -->
+    <div id="error-toaster" class="fixed bottom-4 right-4 z-[2000] max-w-md bg-red-500 text-white p-4 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full opacity-0 pointer-events-none">
+        <div class="flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id="error-message" class="flex-1"></span>
+        </div>
+    </div>
 </body>
 </html>
