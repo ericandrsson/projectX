@@ -18,10 +18,28 @@ body {
     touch-action: manipulation;
 }
 
+input, textarea, select {
+    font-size: 16px !important;
+}
+
 @media (max-width: 768px) {
     .controls > div {
         width: 40px;
         height: 40px;
         font-size: 24px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    body {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    #inline-form-content {
+        font-size: 16px;
+    }
+
+    #review-content, #review-rating {
+        font-size: 16px !important;
     }
 }
