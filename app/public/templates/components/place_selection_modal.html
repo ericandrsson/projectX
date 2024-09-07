@@ -1,0 +1,13 @@
+<div id="place-selection-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[2000]">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-bold mb-4">Select a Place</h3>
+        <input id="modal-place-search" type="text" placeholder="Search for a place..." class="w-full px-3 py-2 border rounded-md mb-4">
+        <div id="modal-search-results" class="max-h-60 overflow-y-auto mb-4">
+            {% for place in places %}
+                <div class="p-2 hover:bg-gray-100 cursor-pointer place-option" data-place-id="{{ place.id }}" data-place-lat="{{ place.lat }}" data-place-lng="{{ place.lng }}">
+                    {{ place.name }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
